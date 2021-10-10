@@ -25,6 +25,7 @@ public class NeuralNetTest : MonoBehaviour
     public TMPro.TextMeshProUGUI uiTokenizerStatus;
     public TMPro.TMP_InputField uiInput;
     public TMPro.TextMeshProUGUI uiPredictionOuput;
+    public TMPro.TMP_InputField uiTextGeneration;
 
     #region Model loading & UI
 
@@ -93,10 +94,22 @@ public class NeuralNetTest : MonoBehaviour
         var mdl_output = GetOutput1(input_tokens, 5);
         for (int i = 0; i < mdl_output.Count; i++)
         {
-            ui_output_str += $"Model output ({i}):\n {mdl_output[i].Aggregate("", (s, p) => s + '\t' + Prediction2Str(p) + "\n")}\n";
+            ui_output_str += $"Model output ({i}):\n {mdl_output[i].Aggregate("", (s, p) => s + '\t' + Prediction2ConfidenceStr(p) + "\n")}\n";
 
         }
         uiPredictionOuput.text = ui_output_str;
+    }
+
+    public void OnAddWordClick()
+    {
+        if (uiTextGeneration.text.Last() != ' ')
+        {
+            uiTextGeneration.text += ' ';
+        }
+        string ui_output_str = $"Input: {uiTextGeneration.text}\n\n";
+        int[] input_tokens = Tokenize(uiTextGeneration.text);
+        ui_output_str += $"Tokens: [{string.Join(",", input_tokens)}]\n\n";
+        uiTextGeneration.text += Prediction2Word(GetOutput1(input_tokens, 1).Last().First());
     }
     #endregion
 
@@ -144,10 +157,16 @@ public class NeuralNetTest : MonoBehaviour
         }
         return output_predictions;
     }
-    public string Prediction2Str(Prediction p)
+
+    public string Prediction2Word(Prediction p)
     {
         var str = BlingFireUtils.IdsToText(tokenizerI2WHandle, new int[] { p.token });
-        str = str.Substring(0, str.Length - 1);
+        return str.Substring(0, str.Length - 1);
+    }
+
+    public string Prediction2ConfidenceStr(Prediction p)
+    {
+        var str = Prediction2Word(p);
         return $"{p.token} ({str}) => {p.confidence}";
     }
 
